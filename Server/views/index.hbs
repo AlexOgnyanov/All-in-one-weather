@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>All-in-one-weather</title>
+
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"
+    integrity="sha512-QSkVNOCYLtj73J4hbmVoOV6KVZuMluZlioC+trLpewV8qMjsWqlIQvkn1KGX2StWvPMdWGBqim1xlC8krl1EKQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script type="text/javascript" src="index.js"></script>
+  <script type="text/javascript" src="requests.js"></script>
+</head>
+
+<body style="height: 95vh;">
+  <div style="text-align:center">
+    <label for="ids">Choose a device to display:</label>
+    <select name="ids" id="ids" onchange="graphData()">
+      {{#each devices}}
+        <option value={{deviceId}}>
+          {{deviceId}}
+        </option>
+      {{/each}}
+    </select>
+  </div>
+  
+  <div style="display: flex; flex-wrap: wrap" id="canvasContainer">
+    <canvas id="pressure" class="canvasClass"></canvas>
+    <canvas id="temperature" class="canvasClass"></canvas>
+    <canvas id="humidity" class="canvasClass"></canvas>
+    <canvas id="altitude" class="canvasClass"></canvas>
+  </div>
+
+  <script>
+    const options = {
+      scales: {
+        y: {
+          beginAtZero: true,
+        },
+      },
+      responsive: false,
+    }
+
+    const pressureCanvas = document
+      .getElementById('pressure')
+      .getContext('2d');
+    const temperatureCanvas = document
+      .getElementById('temperature')
+      .getContext('2d');
+    const humidityCanvas = document
+      .getElementById('humidity')
+      .getContext('2d');
+    const altitudeCanvas = document
+      .getElementById('altitude')
+      .getContext('2d');
+
+    function updateCanvas(chartName, data, labels){
+      let chartStatus = Chart.getChart(chartName);
+
+      if (chartStatus != undefined) {
+        chartStatus.data.labels = labels;
+        chartStatus.data.datasets.forEach((dataset) => {
+          dataset.data = data;
+        });
+
+        chartStatus.update();
+
+        return 1;
+      }
+
+      return 0;
+    }
+
+    async function graphData(){
+      const labels = await getLabels();
+
+      const pressure = await getPressure();
+      const temperature = await getTemperature();
+      const humidity = await getHumidity();
+      const altitude = await getAltitude();
+
+      updateCanvas(pressureCanvas, pressure, labels);
+      updateCanvas(temperatureCanvas, temperature, labels);
+      updateCanvas(humidityCanvas, humidity, labels);
+      if(updateCanvas(altitudeCanvas, altitude, labels) === 1){
+        return;
+      }
+
+      const pressureChart = new Chart(pressureCanvas, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Pressure',
+              data: pressure,
+              fill: true,
+              backgroundColor: ['rgba(66, 133, 244, 0.2)'],
+              borderColor: ['rgba(66, 133, 244, 1)'],
+              borderWidth: 3,
+            },
+          ],
+        },
+        options,
+      });
+
+      const temperatureChart = new Chart(temperatureCanvas, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Temperature',
+              data: temperature,
+              fill: true,
+              backgroundColor: ['rgba(234, 67, 53, 0.2)'],
+              borderColor: ['rgba(234, 67, 53, 1)'],
+              borderWidth: 3,
+            },
+          ],
+        },
+        options,
+      });
+
+      const humidityChart = new Chart(humidityCanvas, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+            label: 'Humidity',
+            data: humidity,
+            fill: true,
+            backgroundColor: ['rgba(52, 168, 83, 0.2)'],
+            borderColor: ['rgba(52, 168, 83, 1)'],
+            borderWidth: 3,
+            },
+          ],
+        },
+        options,
+      });
+
+      const altitudeChart = new Chart(altitudeCanvas, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Altitude',
+              data: altitude,
+              fill: true,
+              backgroundColor: ['rgba(251, 188, 4, 0.2)'],
+              borderColor: ['rgba(251, 188, 4, 1)'],
+              borderWidth: 3,
+            },
+          ],
+        },
+        options,
+      });
+    }
+    graphData();
+  </script>
+</body>
+
+</html>
